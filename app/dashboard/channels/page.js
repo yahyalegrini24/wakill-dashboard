@@ -9,12 +9,10 @@ import {
   Link2, 
   Loader2,
   Settings2,
-  Unlink,
-  AlertCircle,
-  Zap // أيقونة جديدة للربط السريع
+  Zap 
 } from "lucide-react";
 
-// --- CUSTOM BRAND ICONS (نفس الأيقونات تاعك) ---
+// --- CUSTOM BRAND ICONS ---
 const InstagramIcon = ({ size = 20, className = "" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
@@ -42,7 +40,7 @@ export default function ChannelsPage() {
   const [success, setSuccess] = useState("");
   const [showTokens, setShowTokens] = useState({});
 
-  // States للربط اليدوي (احتياط)
+  // States للربط اليدوي
   const [whatsapp, setWhatsapp] = useState({ phoneNumberId: "", token: "" });
   const [facebook, setFacebook] = useState({ pageId: "", token: "" });
   const [instagram, setInstagram] = useState({ igId: "", token: "" });
@@ -58,18 +56,17 @@ export default function ChannelsPage() {
     }
   }, []);
 
-  // 1. Initialize Facebook SDK آلياً
+  // 1. Initialize Facebook SDK
   useEffect(() => {
     window.fbAsyncInit = function() {
       window.FB.init({
-        appId      : process.env.NEXT_PUBLIC_FB_APP_ID, // تأكد من وجوده في .env تاع الـ Frontend
+        appId      : process.env.NEXT_PUBLIC_FB_APP_ID, 
         cookie     : true,
         xfbml      : true,
         version    : 'v19.0'
       });
     };
 
-    // تحميل الـ Script
     (function(d, s, id) {
       var js, fjs = d.getElementsByTagName(s)[0];
       if (d.getElementById(id)) return;
@@ -81,32 +78,42 @@ export default function ChannelsPage() {
     fetchStore();
   }, [fetchStore]);
 
-  // 2. دالة فتح الـ Popup و إرسال الكود للـ Backend
+  // 2. المحسن: WhatsApp Embedded Signup (Code Flow)
   const launchWhatsAppSignup = () => {
     setSubmitting('whatsapp');
+    
+    // تأكد من استخدام الـ Config ID الجديد هنا
+    const CONFIG_ID = '2736971236643703'; 
+
     window.FB.login(function(response) {
       if (response.authResponse) {
+        // نأخذ الـ code لأننا استعملنا System User Token في الإعدادات
         const code = response.authResponse.code;
-        // إرسال الكود للـ Route الجديد اللي خدمناه في الـ Backend
+        
+        console.log("Authorization Code received:", code);
+
+        // إرسال الكود للباكيند لتبديله بـ Token دائم وتخزينه
         api.post("/store/connect/meta-exchange", { code })
           .then(res => {
-            setSuccess("WhatsApp Linked Successfully!");
+            setSuccess("WhatsApp Business Linked!");
             fetchStore();
           })
-          .catch(err => console.error("Link Error", err))
+          .catch(err => {
+            console.error("Backend Exchange Error", err);
+            alert("Failed to link account. Check backend CORS and App Secret.");
+          })
           .finally(() => setSubmitting(null));
       } else {
         setSubmitting(null);
-        console.log('User cancelled login or did not fully authorize.');
+        console.warn('User cancelled or did not authorize.');
       }
     }, {
-      config_id: '1665322504783174', // الـ Configuration ID من Meta Dashboard (اختياري بصح أحسن)
-      response_type: 'code',
+      config_id: CONFIG_ID,
+      response_type: 'code', // إجباري لـ System User Token
       override_default_response_type: true,
-      scope: 'whatsapp_business_management,whatsapp_business_messaging,pages_show_list,pages_manage_metadata',
-      extras: {
-        setup: { /* خيارات إضافية إذا حبيت */ }
-      }
+      // السكوب يتم تحديده غالباً في الـ Configuration داخل Meta Dashboard
+      // لكن نتركه هنا كاحتياط
+      scope: 'whatsapp_business_management,whatsapp_business_messaging,business_management'
     });
   };
 
@@ -140,7 +147,7 @@ export default function ChannelsPage() {
           <h1 className="text-4xl font-black text-gray-900 tracking-tighter flex items-center gap-3">
             <Settings2 size={32} className="text-blue-600" /> Channels
           </h1>
-          <p className="text-gray-500 font-medium mt-1">Connect your Meta apps to enable automated AI sales.</p>
+          <p className="text-gray-500 font-medium mt-1">Connect Meta assets to power **Wakill AI**.</p>
         </div>
         
         <AnimatePresence>
@@ -157,65 +164,62 @@ export default function ChannelsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* WHATSAPP - UPDATED TO EMBEDDED SIGNUP */}
+        {/* WHATSAPP CARD */}
         <ChannelCard 
           icon={<WhatsAppIcon className="text-emerald-500" />}
           title="WhatsApp"
           isConnected={store?.channels?.whatsapp?.connected}
-          color="emerald"
         >
           <div className="space-y-4">
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Easy Connect</p>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Embedded Signup</p>
             <button
               onClick={launchWhatsAppSignup}
               disabled={submitting === 'whatsapp'}
               className="w-full bg-emerald-500 text-white font-black text-xs uppercase tracking-[0.15em] py-5 rounded-2xl shadow-lg hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-40"
             >
               {submitting === 'whatsapp' ? <Loader2 className="animate-spin" size={20} /> : <Zap size={20} fill="white" />}
-              {store?.channels?.whatsapp?.connected ? "Reconnect WhatsApp" : "Connect with Meta"}
+              {store?.channels?.whatsapp?.connected ? "Reconnect Account" : "Connect with Meta"}
             </button>
             
-            {store?.channels?.whatsapp?.businessName && (
+            {store?.channels?.whatsapp?.connected && (
               <p className="text-center text-[11px] font-bold text-emerald-600">
-                Linked to: {store.channels.whatsapp.businessName}
+                Connected to Business API
               </p>
             )}
 
             <div className="relative py-4">
               <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-gray-100"></span></div>
-              <div className="relative flex justify-center text-[10px] uppercase font-black text-gray-300 bg-white px-2">OR Manual setup</div>
+              <div className="relative flex justify-center text-[10px] uppercase font-black text-gray-300 bg-white px-2">Manual Access</div>
             </div>
 
-            <InputField label="Access Token (Manual)" type={showTokens.wa ? "text" : "password"} value={whatsapp.token} onChange={v => setWhatsapp({...whatsapp, token: v})} toggle={() => setShowTokens(p => ({...p, wa: !p.wa}))} isToggled={showTokens.wa} />
-            <SubmitButton onClick={() => handleConnectManual('whatsapp', whatsapp, "/store/connect/whatsapp")} loading={submitting === 'whatsapp'} color="bg-gray-800" label="Save Manual" />
+            <InputField label="Token (Dev only)" type={showTokens.wa ? "text" : "password"} value={whatsapp.token} onChange={v => setWhatsapp({...whatsapp, token: v})} toggle={() => setShowTokens(p => ({...p, wa: !p.wa}))} isToggled={showTokens.wa} />
+            <SubmitButton onClick={() => handleConnectManual('whatsapp', whatsapp, "/store/connect/whatsapp")} loading={submitting === 'whatsapp'} color="bg-gray-800" label="Save Token" />
           </div>
         </ChannelCard>
 
-        {/* FACEBOOK */}
+        {/* MESSENGER CARD */}
         <ChannelCard 
           icon={<FacebookIcon className="text-blue-600" />}
           title="Messenger"
           isConnected={store?.channels?.facebook?.connected}
-          color="blue"
         >
           <form onSubmit={(e) => { e.preventDefault(); handleConnectManual('facebook', facebook, "/store/connect/facebook"); }} className="space-y-5">
             <InputField label="Page ID" value={facebook.pageId} onChange={v => setFacebook({...facebook, pageId: v})} />
             <InputField label="Page Access Token" type={showTokens.fb ? "text" : "password"} value={facebook.token} onChange={v => setFacebook({...facebook, token: v})} toggle={() => setShowTokens(p => ({...p, fb: !p.fb}))} isToggled={showTokens.fb} />
-            <SubmitButton loading={submitting === 'facebook'} color="bg-blue-600" label={store?.channels?.facebook?.connected ? "Update Connection" : "Connect Channel"} />
+            <SubmitButton loading={submitting === 'facebook'} color="bg-blue-600" label="Update Messenger" />
           </form>
         </ChannelCard>
 
-        {/* INSTAGRAM */}
+        {/* INSTAGRAM CARD */}
         <ChannelCard 
           icon={<InstagramIcon className="text-pink-600" />}
           title="Instagram"
           isConnected={store?.channels?.instagram?.connected}
-          color="pink"
         >
           <form onSubmit={(e) => { e.preventDefault(); handleConnectManual('instagram', instagram, "/store/connect/instagram"); }} className="space-y-5">
-            <InputField label="Business ID" value={instagram.igId} onChange={v => setInstagram({...instagram, igId: v})} />
+            <InputField label="IG Business ID" value={instagram.igId} onChange={v => setInstagram({...instagram, igId: v})} />
             <InputField label="Access Token" type={showTokens.ig ? "text" : "password"} value={instagram.token} onChange={v => setInstagram({...instagram, token: v})} toggle={() => setShowTokens(p => ({...p, ig: !p.ig}))} isToggled={showTokens.ig} />
-            <SubmitButton loading={submitting === 'instagram'} color="bg-pink-600" label={store?.channels?.instagram?.connected ? "Update Connection" : "Connect Channel"} />
+            <SubmitButton loading={submitting === 'instagram'} color="bg-pink-600" label="Update Instagram" />
           </form>
         </ChannelCard>
 
@@ -224,9 +228,9 @@ export default function ChannelsPage() {
   );
 }
 
-// --- REUSABLE COMPONENTS (بقت كما هي مع تغيير بسيط في الـ SubmitButton) ---
+// --- SHARED COMPONENTS ---
 
-function ChannelCard({ icon, title, isConnected, children, color }) {
+function ChannelCard({ icon, title, isConnected, children }) {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
@@ -236,15 +240,14 @@ function ChannelCard({ icon, title, isConnected, children, color }) {
         <div className="flex items-center justify-between mb-8">
           <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">{icon}</div>
           <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${isConnected ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-gray-50 border-gray-100 text-gray-400'}`}>
-            {isConnected ? "● Online" : "○ Offline"}
+            {isConnected ? "● Connected" : "○ Disconnected"}
           </div>
         </div>
         
         <h2 className="text-2xl font-black text-gray-900 mb-2">{title}</h2>
         <p className="text-sm text-gray-500 font-medium mb-8 leading-relaxed">
-          Sync your {title} business assets to enable the Wakil AI agent.
+          Enable the **Wakill AI Agent** on your {title} channel.
         </p>
-
         {children}
       </div>
     </motion.div>
