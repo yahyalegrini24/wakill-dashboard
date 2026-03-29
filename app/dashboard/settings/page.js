@@ -10,10 +10,13 @@ import {
   Loader2, 
   CheckCircle2, 
   AlertTriangle,
-  ChevronDown
+  ChevronDown,
+  Info,
+  ShieldCheck
 } from "lucide-react";
 
 export default function SettingsPage() {
+  // --- KEEPING ORIGINAL STATES ---
   const [form, setForm] = useState({
     name: "",
     wilaya: { number: "", name: "" },
@@ -24,6 +27,7 @@ export default function SettingsPage() {
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
 
+  // --- KEEPING ORIGINAL LOGIC ---
   const fetchStore = useCallback(async () => {
     try {
       const res = await api.get("/store/my");
@@ -51,7 +55,7 @@ export default function SettingsPage() {
     setError("");
     try {
       await api.put("/store/update", form);
-      setSuccess("Settings updated successfully!");
+      setSuccess("تم تحديث الإعدادات بنجاح!");
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
       setError(err.response?.data?.message || "Update failed");
@@ -84,128 +88,146 @@ export default function SettingsPage() {
   ];
 
   if (loading) return (
-    <div className="flex h-screen items-center justify-center bg-gray-50/50">
-      <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+    <div className="flex h-screen items-center justify-center bg-slate-50/50">
+      <Loader2 className="w-10 h-10 text-slate-900 animate-spin" />
     </div>
   );
 
   return (
-    <div className="max-w-4xl p-8 mx-auto">
-      <header className="mb-10">
-        <h1 className="text-4xl font-black text-gray-900 tracking-tight flex items-center gap-3">
-          <Settings2Icon className="text-blue-600" /> Store Profile
-        </h1>
-        <p className="text-gray-500 font-medium mt-2">Update your store identity and checkout preferences.</p>
+    <div dir="rtl" className="max-w-6xl p-6 lg:p-10 mx-auto space-y-10">
+      
+      {/* HEADER SECTION */}
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-900 text-white rounded-full text-[10px] font-black uppercase tracking-[0.1em]">
+            <ShieldCheck size={12} /> الملف التعريفي للمتجر
+          </div>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+             إعدادات الهوية
+          </h1>
+          <p className="text-slate-500 font-medium">تحكم في اسم متجرك، موقعه، وطرق الدفع المفضلة.</p>
+        </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        {/* Left Side: Summary Info */}
-        <div className="md:col-span-1 space-y-6">
-          <div className="bg-blue-600 rounded-[2rem] p-8 text-white shadow-xl shadow-blue-200">
-            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4">
-              <Store size={24} />
+        {/* LEFT SIDE: PREVIEW CARD */}
+        <div className="lg:col-span-4 space-y-6">
+          <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-slate-200 relative overflow-hidden group">
+            <div className="relative z-10">
+              <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md border border-white/10 group-hover:rotate-12 transition-transform">
+                <Store size={28} className="text-white" />
+              </div>
+              <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">اسم المتجر</p>
+              <h3 className="text-2xl font-black leading-tight truncate">{form.name || "متجر جديد"}</h3>
+              
+              <div className="mt-8 pt-8 border-t border-white/10 flex items-center justify-between">
+                <div>
+                  <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">الولاية</p>
+                  <p className="font-bold flex items-center gap-1.5"><MapPin size={14} className="text-slate-400" /> {form.wilaya.name || "غير محدد"}</p>
+                </div>
+                <div className="bg-white/5 p-3 rounded-2xl text-[10px] font-black tracking-widest border border-white/5">DZ</div>
+              </div>
             </div>
-            <h3 className="text-xl font-bold leading-tight">{form.name || "Unnamed Store"}</h3>
-            <p className="text-blue-100 text-xs mt-2 font-medium uppercase tracking-widest">
-              {form.wilaya.name}, DZ
-            </p>
+            {/* Background Decoration */}
+            <Store size={150} className="absolute -bottom-10 -left-10 text-white/[0.03] -rotate-12" />
           </div>
 
-          <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-sm">
-            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Help</h4>
-            <p className="text-xs text-gray-500 leading-relaxed">
-              These details will be shown to your customers during the automated checkout process on Messenger and WhatsApp.
+          <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex items-start gap-4">
+            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><Info size={20} /></div>
+            <p className="text-xs text-slate-500 font-medium leading-relaxed">
+              هذه المعلومات ستظهر لزبائنك أثناء عملية الطلب الآلية عبر مسنجر وواتساب. تأكد من دقة اسم المتجر.
             </p>
           </div>
         </div>
 
-        {/* Right Side: Form */}
-        <div className="md:col-span-2">
+        {/* RIGHT SIDE: SETTINGS FORM */}
+        <div className="lg:col-span-8">
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/40"
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            className="bg-white p-8 lg:p-10 rounded-[3rem] border border-slate-100 shadow-xl shadow-slate-200/50"
           >
-            <AnimatePresence>
+            <AnimatePresence mode="wait">
               {success && (
                 <motion.div 
-                  initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-                  className="bg-emerald-50 border border-emerald-100 text-emerald-700 p-4 rounded-2xl mb-6 flex items-center gap-3 text-sm font-bold"
+                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+                  className="bg-emerald-50 border border-emerald-100 text-emerald-700 p-5 rounded-[1.5rem] mb-8 flex items-center gap-3 text-sm font-black shadow-sm"
                 >
-                  <CheckCircle2 size={18} /> {success}
+                  <CheckCircle2 size={20} /> {success}
                 </motion.div>
               )}
               {error && (
                 <motion.div 
-                  initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-                  className="bg-rose-50 border border-rose-100 text-rose-700 p-4 rounded-2xl mb-6 flex items-center gap-3 text-sm font-bold"
+                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+                  className="bg-rose-50 border border-rose-100 text-rose-700 p-5 rounded-[1.5rem] mb-8 flex items-center gap-3 text-sm font-black shadow-sm"
                 >
-                  <AlertTriangle size={18} /> {error}
+                  <AlertTriangle size={20} /> {error}
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <form onSubmit={handleUpdate} className="space-y-6">
+            <form onSubmit={handleUpdate} className="space-y-8">
               
               <FormInput 
-                label="Public Store Name" 
+                label="اسم المتجر العام" 
                 icon={<Store size={16} />}
-                placeholder="e.g. My Algerian Shop"
+                placeholder="مثلاً: متجر الأناقة الجزائري"
                 value={form.name}
                 onChange={v => setForm({ ...form, name: v })}
               />
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
-                  <MapPin size={12} className="text-blue-500" /> Main Wilaya
-                </label>
-                <div className="relative">
-                  <select
-                    value={form.wilaya.number}
-                    onChange={e => {
-                      const selected = wilayas.find(w => w.number === Number(e.target.value));
-                      setForm({ ...form, wilaya: selected });
-                    }}
-                    className="w-full bg-gray-50 border-2 border-transparent rounded-2xl px-5 py-4 text-sm font-bold text-gray-800 appearance-none outline-none focus:bg-white focus:border-blue-500 transition-all shadow-sm"
-                  >
-                    {wilayas.map(w => (
-                      <option key={w.number} value={w.number}>
-                        {w.number.toString().padStart(2, '0')} — {w.name}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest mr-1 flex items-center gap-2">
+                    <MapPin size={14} className="text-slate-900" /> الولاية الرئيسية
+                  </label>
+                  <div className="relative group">
+                    <select
+                      value={form.wilaya.number}
+                      onChange={e => {
+                        const selected = wilayas.find(w => w.number === Number(e.target.value));
+                        setForm({ ...form, wilaya: selected });
+                      }}
+                      className="w-full bg-slate-50 border-2 border-transparent rounded-2xl px-5 py-4 text-sm font-bold text-slate-800 appearance-none outline-none focus:bg-white focus:border-slate-900 transition-all shadow-sm"
+                    >
+                      {wilayas.map(w => (
+                        <option key={w.number} value={w.number}>
+                          {w.number.toString().padStart(2, '0')} — {w.name}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-focus-within:rotate-180 transition-transform" />
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
-                  <CreditCard size={12} className="text-blue-500" /> Default Payment Method
-                </label>
-                <div className="relative">
-                  <select
-                    value={form.paymentMethod}
-                    onChange={e => setForm({ ...form, paymentMethod: e.target.value })}
-                    className="w-full bg-gray-50 border-2 border-transparent rounded-2xl px-5 py-4 text-sm font-bold text-gray-800 appearance-none outline-none focus:bg-white focus:border-blue-500 transition-all shadow-sm"
-                  >
-                    <option value="cash_on_delivery">💵 Cash on Delivery (COD)</option>
-                    <option value="ccp">🏤 CCP (Algérie Poste)</option>
-                    <option value="baridimob">📱 BaridiMob</option>
-                  </select>
-                  <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                <div className="space-y-3">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest mr-1 flex items-center gap-2">
+                    <CreditCard size={14} className="text-slate-900" /> طريقة الدفع الافتراضية
+                  </label>
+                  <div className="relative group">
+                    <select
+                      value={form.paymentMethod}
+                      onChange={e => setForm({ ...form, paymentMethod: e.target.value })}
+                      className="w-full bg-slate-50 border-2 border-transparent rounded-2xl px-5 py-4 text-sm font-bold text-slate-800 appearance-none outline-none focus:bg-white focus:border-slate-900 transition-all shadow-sm"
+                    >
+                      <option value="cash_on_delivery">💵 الدفع عند الاستلام (COD)</option>
+                      <option value="ccp">🏤 الدفع عبر CCP</option>
+                      <option value="baridimob">📱 تطبيق BaridiMob</option>
+                    </select>
+                    <ChevronDown size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-focus-within:rotate-180 transition-transform" />
+                  </div>
                 </div>
               </div>
 
               <motion.button
-                whileHover={{ scale: 1.01 }}
+                whileHover={{ y: -2 }}
                 whileTap={{ scale: 0.98 }}
                 type="submit"
                 disabled={isSaving}
-                className="w-full bg-gray-900 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-blue-600 transition-all disabled:opacity-50 flex items-center justify-center gap-3 mt-4"
+                className="w-full bg-slate-900 text-white py-5 rounded-[1.5rem] font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-black transition-all disabled:opacity-50 flex items-center justify-center gap-3 mt-4"
               >
                 {isSaving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
-                {isSaving ? "Syncing..." : "Apply Settings"}
+                {isSaving ? "جاري الحفظ..." : "تطبيق الإعدادات"}
               </motion.button>
             </form>
           </motion.div>
@@ -215,13 +237,13 @@ export default function SettingsPage() {
   );
 }
 
-// --- SUB-COMPONENTS ---
+// --- SUB-COMPONENTS (FRONT-END ENHANCEMENTS ONLY) ---
 
 function FormInput({ label, icon, placeholder, value, onChange }) {
   return (
-    <div className="space-y-2">
-      <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
-        {icon && <span className="text-blue-500">{icon}</span>}
+    <div className="space-y-3">
+      <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest mr-1 flex items-center gap-2">
+        {icon && <span className="text-slate-900">{icon}</span>}
         {label}
       </label>
       <input
@@ -230,16 +252,8 @@ function FormInput({ label, icon, placeholder, value, onChange }) {
         placeholder={placeholder}
         value={value}
         onChange={e => onChange(e.target.value)}
-        className="w-full bg-gray-50 border-2 border-transparent rounded-2xl px-5 py-4 text-sm font-bold text-gray-800 outline-none focus:bg-white focus:border-blue-500 transition-all shadow-sm placeholder:font-normal placeholder:text-gray-300"
+        className="w-full bg-slate-50 border-2 border-transparent rounded-2xl px-5 py-4 text-sm font-bold text-slate-800 outline-none focus:bg-white focus:border-slate-900 transition-all shadow-sm placeholder:font-medium placeholder:text-slate-300"
       />
     </div>
-  );
-}
-
-function Settings2Icon({ className }) {
-  return (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M20 7h-9" /><path d="M14 17H5" /><circle cx="17" cy="17" r="3" /><circle cx="7" cy="7" r="3" />
-    </svg>
   );
 }

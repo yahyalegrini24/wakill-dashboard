@@ -9,7 +9,9 @@ import {
   Link2, 
   Loader2,
   Settings2,
-  Zap 
+  Zap,
+  ShieldCheck,
+  Lock
 } from "lucide-react";
 
 // --- CUSTOM BRAND ICONS ---
@@ -34,17 +36,18 @@ const WhatsAppIcon = ({ size = 20, className = "" }) => (
 );
 
 export default function ChannelsPage() {
+  // --- KEEPING ALL ORIGINAL STATES ---
   const [store, setStore] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(null); 
   const [success, setSuccess] = useState("");
   const [showTokens, setShowTokens] = useState({});
 
-  // States للربط اليدوي
   const [whatsapp, setWhatsapp] = useState({ phoneNumberId: "", token: "" });
   const [facebook, setFacebook] = useState({ pageId: "", token: "" });
   const [instagram, setInstagram] = useState({ igId: "", token: "" });
 
+  // --- KEEPING ORIGINAL FUNCTIONS ---
   const fetchStore = useCallback(async () => {
     try {
       const res = await api.get("/store/my");
@@ -56,7 +59,6 @@ export default function ChannelsPage() {
     }
   }, []);
 
-  // 1. Initialize Facebook SDK
   useEffect(() => {
     window.fbAsyncInit = function() {
       window.FB.init({
@@ -78,41 +80,29 @@ export default function ChannelsPage() {
     fetchStore();
   }, [fetchStore]);
 
-  // 2. المحسن: WhatsApp Embedded Signup (Code Flow)
   const launchWhatsAppSignup = () => {
     setSubmitting('whatsapp');
-    
-    // تأكد من استخدام الـ Config ID الجديد هنا
     const CONFIG_ID = '2736971236643703'; 
 
     window.FB.login(function(response) {
       if (response.authResponse) {
-        // نأخذ الـ code لأننا استعملنا System User Token في الإعدادات
         const code = response.authResponse.code;
-        
-        console.log("Authorization Code received:", code);
-
-        // إرسال الكود للباكيند لتبديله بـ Token دائم وتخزينه
         api.post("/store/connect/meta-exchange", { code })
           .then(res => {
-            setSuccess("WhatsApp Business Linked!");
+            setSuccess("تم ربط WhatsApp بنجاح!");
             fetchStore();
           })
           .catch(err => {
-            console.error("Backend Exchange Error", err);
-            alert("Failed to link account. Check backend CORS and App Secret.");
+            alert("فشل الربط. يرجى التحقق من الإعدادات.");
           })
           .finally(() => setSubmitting(null));
       } else {
         setSubmitting(null);
-        console.warn('User cancelled or did not authorize.');
       }
     }, {
       config_id: CONFIG_ID,
-      response_type: 'code', // إجباري لـ System User Token
+      response_type: 'code',
       override_default_response_type: true,
-      // السكوب يتم تحديده غالباً في الـ Configuration داخل Meta Dashboard
-      // لكن نتركه هنا كاحتياط
       scope: 'whatsapp_business_management,whatsapp_business_messaging,business_management'
     });
   };
@@ -121,7 +111,7 @@ export default function ChannelsPage() {
     setSubmitting(channel);
     try {
       await api.put(endpoint, data);
-      setSuccess(`${channel} updated successfully!`);
+      setSuccess(`${channel} تم التحديث بنجاح!`);
       await fetchStore();
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
@@ -132,95 +122,100 @@ export default function ChannelsPage() {
   };
 
   if (loading) return (
-    <div className="flex h-screen items-center justify-center bg-gray-50">
+    <div className="flex h-screen items-center justify-center bg-slate-50">
       <div className="flex flex-col items-center gap-4">
-        <Loader2 className="animate-spin text-blue-600" size={48} />
-        <p className="font-black text-gray-400 text-xs uppercase tracking-[0.2em]">Loading Channels...</p>
+        <Loader2 className="animate-spin text-slate-900" size={48} />
+        <p className="font-black text-slate-400 text-[10px] uppercase tracking-widest">تحميل القنوات...</p>
       </div>
     </div>
   );
 
   return (
-    <div className="p-8 max-w-[1400px] mx-auto">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-12">
+    <div dir="rtl" className="p-6 lg:p-10 max-w-[1500px] mx-auto space-y-12">
+      
+      {/* HEADER */}
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-black text-gray-900 tracking-tighter flex items-center gap-3">
-            <Settings2 size={32} className="text-blue-600" /> Channels
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-wider mb-3 border border-blue-100">
+            <ShieldCheck size={12} /> نظام ربط آمن
+          </div>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+            <Settings2 size={36} className="text-slate-900" /> إعدادات القنوات
           </h1>
-          <p className="text-gray-500 font-medium mt-1">Connect Meta assets to power **Wakill AI**.</p>
+          <p className="text-slate-500 font-medium mt-2">اربط حسابات Meta لتفعيل WAKILL لمتجرك.</p>
         </div>
         
         <AnimatePresence>
           {success && (
             <motion.div 
               initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
-              className="bg-emerald-500 text-white px-6 py-3 rounded-2xl shadow-lg shadow-emerald-200 flex items-center gap-2 text-sm font-bold"
+              className="bg-emerald-500 text-white px-8 py-4 rounded-[2rem] shadow-xl shadow-emerald-100 flex items-center gap-3 text-sm font-black"
             >
-              <CheckCircle2 size={18} /> {success}
+              <CheckCircle2 size={20} /> {success}
             </motion.div>
           )}
         </AnimatePresence>
       </header>
 
+      {/* CHANNELS GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* WHATSAPP CARD */}
+        {/* WHATSAPP CARD - FULLY ACTIVE */}
         <ChannelCard 
-          icon={<WhatsAppIcon className="text-emerald-500" />}
+          icon={<WhatsAppIcon className="text-[#25D366]" />}
           title="WhatsApp"
           isConnected={store?.channels?.whatsapp?.connected}
         >
-          <div className="space-y-4">
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Embedded Signup</p>
-            <button
-              onClick={launchWhatsAppSignup}
-              disabled={submitting === 'whatsapp'}
-              className="w-full bg-emerald-500 text-white font-black text-xs uppercase tracking-[0.15em] py-5 rounded-2xl shadow-lg hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-40"
-            >
-              {submitting === 'whatsapp' ? <Loader2 className="animate-spin" size={20} /> : <Zap size={20} fill="white" />}
-              {store?.channels?.whatsapp?.connected ? "Reconnect Account" : "Connect with Meta"}
-            </button>
-            
-            {store?.channels?.whatsapp?.connected && (
-              <p className="text-center text-[11px] font-bold text-emerald-600">
-                Connected to Business API
-              </p>
-            )}
+          <div className="space-y-6">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 text-center">الربط السريع (موصى به)</p>
+               <button
+                 onClick={launchWhatsAppSignup}
+                 disabled={submitting === 'whatsapp'}
+                 className="w-full bg-[#25D366] text-white font-black text-xs uppercase tracking-widest py-5 rounded-2xl shadow-lg shadow-green-100 hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-40"
+               >
+                 {submitting === 'whatsapp' ? <Loader2 className="animate-spin" size={20} /> : <Zap size={20} fill="white" />}
+                 {store?.channels?.whatsapp?.connected ? "إعادة ربط الحساب" : "الاتصال عبر Meta"}
+               </button>
+            </div>
 
-            <div className="relative py-4">
-              <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-gray-100"></span></div>
-              <div className="relative flex justify-center text-[10px] uppercase font-black text-gray-300 bg-white px-2">Manual Access</div>
+            <div className="relative flex items-center gap-4 py-2">
+              <div className="flex-1 h-px bg-slate-100"></div>
+              <span className="text-[10px] uppercase font-black text-slate-300 tracking-widest">أو يدوياً</span>
+              <div className="flex-1 h-px bg-slate-100"></div>
             </div>
 
             <InputField label="Token (Dev only)" type={showTokens.wa ? "text" : "password"} value={whatsapp.token} onChange={v => setWhatsapp({...whatsapp, token: v})} toggle={() => setShowTokens(p => ({...p, wa: !p.wa}))} isToggled={showTokens.wa} />
-            <SubmitButton onClick={() => handleConnectManual('whatsapp', whatsapp, "/store/connect/whatsapp")} loading={submitting === 'whatsapp'} color="bg-gray-800" label="Save Token" />
+            <SubmitButton onClick={() => handleConnectManual('whatsapp', whatsapp, "/store/connect/whatsapp")} loading={submitting === 'whatsapp'} color="bg-slate-900" label="حفظ التوكن" />
           </div>
         </ChannelCard>
 
-        {/* MESSENGER CARD */}
+        {/* MESSENGER CARD - COMING SOON */}
         <ChannelCard 
-          icon={<FacebookIcon className="text-blue-600" />}
+          icon={<FacebookIcon className="text-slate-400" />}
           title="Messenger"
-          isConnected={store?.channels?.facebook?.connected}
+          comingSoon
         >
-          <form onSubmit={(e) => { e.preventDefault(); handleConnectManual('facebook', facebook, "/store/connect/facebook"); }} className="space-y-5">
-            <InputField label="Page ID" value={facebook.pageId} onChange={v => setFacebook({...facebook, pageId: v})} />
-            <InputField label="Page Access Token" type={showTokens.fb ? "text" : "password"} value={facebook.token} onChange={v => setFacebook({...facebook, token: v})} toggle={() => setShowTokens(p => ({...p, fb: !p.fb}))} isToggled={showTokens.fb} />
-            <SubmitButton loading={submitting === 'facebook'} color="bg-blue-600" label="Update Messenger" />
-          </form>
+          <div className="flex flex-col items-center justify-center py-10 space-y-4 opacity-40 grayscale pointer-events-none select-none">
+             <div className="p-6 bg-slate-100 rounded-full">
+                <Lock size={32} className="text-slate-400" />
+             </div>
+             <p className="text-slate-500 font-bold text-center">خدمة الربط عبر مسنجر قيد التطوير حالياً.</p>
+          </div>
         </ChannelCard>
 
-        {/* INSTAGRAM CARD */}
+        {/* INSTAGRAM CARD - COMING SOON */}
         <ChannelCard 
-          icon={<InstagramIcon className="text-pink-600" />}
+          icon={<InstagramIcon className="text-slate-400" />}
           title="Instagram"
-          isConnected={store?.channels?.instagram?.connected}
+          comingSoon
         >
-          <form onSubmit={(e) => { e.preventDefault(); handleConnectManual('instagram', instagram, "/store/connect/instagram"); }} className="space-y-5">
-            <InputField label="IG Business ID" value={instagram.igId} onChange={v => setInstagram({...instagram, igId: v})} />
-            <InputField label="Access Token" type={showTokens.ig ? "text" : "password"} value={instagram.token} onChange={v => setInstagram({...instagram, token: v})} toggle={() => setShowTokens(p => ({...p, ig: !p.ig}))} isToggled={showTokens.ig} />
-            <SubmitButton loading={submitting === 'instagram'} color="bg-pink-600" label="Update Instagram" />
-          </form>
+          <div className="flex flex-col items-center justify-center py-10 space-y-4 opacity-40 grayscale pointer-events-none select-none">
+             <div className="p-6 bg-slate-100 rounded-full">
+                <Lock size={32} className="text-slate-400" />
+             </div>
+             <p className="text-slate-500 font-bold text-center">خدمة الربط عبر إنستغرام ستتوفر قريباً.</p>
+          </div>
         </ChannelCard>
 
       </div>
@@ -228,25 +223,31 @@ export default function ChannelsPage() {
   );
 }
 
-// --- SHARED COMPONENTS ---
+// --- SHARED UI COMPONENTS ---
 
-function ChannelCard({ icon, title, isConnected, children }) {
+function ChannelCard({ icon, title, isConnected, comingSoon, children }) {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-      className="bg-white border border-gray-100 rounded-[2.5rem] shadow-xl shadow-gray-200/50 flex flex-col h-full"
+      className={`bg-white border border-slate-100 rounded-[2.5rem] shadow-xl shadow-slate-200/40 flex flex-col h-full transition-all duration-500 overflow-hidden relative ${comingSoon ? 'border-dashed border-slate-200' : 'hover:shadow-2xl hover:shadow-slate-200'}`}
     >
       <div className="p-8 flex-1">
         <div className="flex items-center justify-between mb-8">
-          <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">{icon}</div>
-          <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${isConnected ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-gray-50 border-gray-100 text-gray-400'}`}>
-            {isConnected ? "● Connected" : "○ Disconnected"}
-          </div>
+          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">{icon}</div>
+          {comingSoon ? (
+            <div className="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-amber-50 border border-amber-100 text-amber-600 shadow-sm animate-pulse">
+                قريباً
+            </div>
+          ) : (
+            <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border shadow-sm ${isConnected ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>
+              {isConnected ? "● متصل" : "○ غير نشط"}
+            </div>
+          )}
         </div>
         
-        <h2 className="text-2xl font-black text-gray-900 mb-2">{title}</h2>
-        <p className="text-sm text-gray-500 font-medium mb-8 leading-relaxed">
-          Enable the **Wakill AI Agent** on your {title} channel.
+        <h2 className={`text-2xl font-black mb-2 ${comingSoon ? 'text-slate-400' : 'text-slate-900'}`}>{title}</h2>
+        <p className="text-sm text-slate-500 font-medium mb-8 leading-relaxed">
+          {comingSoon ? `نحن نعمل بجد لإتاحة الرد الآلي عبر ${title}.` : `تفعيل ردود الذكاء الاصطناعي على قناة ${title}.`}
         </p>
         {children}
       </div>
@@ -257,17 +258,17 @@ function ChannelCard({ icon, title, isConnected, children }) {
 function InputField({ label, type = "text", value, onChange, toggle, isToggled }) {
   return (
     <div className="space-y-2">
-      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{label}</label>
-      <div className="relative">
+      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">{label}</label>
+      <div className="relative group">
         <input
           type={type}
           value={value}
           onChange={e => onChange(e.target.value)}
-          className="w-full bg-gray-50 border-2 border-transparent rounded-2xl px-5 py-3.5 text-sm font-bold text-gray-800 outline-none focus:bg-white focus:border-blue-500 focus:shadow-lg focus:shadow-blue-50/50 transition-all"
-          placeholder={`Enter ${label}...`}
+          className="w-full bg-slate-50 border-2 border-transparent rounded-2xl px-5 py-4 text-sm font-bold text-slate-800 outline-none focus:bg-white focus:border-slate-900 transition-all text-left placeholder:text-slate-300"
+          placeholder="..."
         />
         {toggle && (
-          <button type="button" onClick={toggle} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-500 transition-colors">
+          <button type="button" onClick={toggle} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-900 transition-colors">
             {isToggled ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
         )}
@@ -282,7 +283,7 @@ function SubmitButton({ loading, color, label, onClick }) {
       type={onClick ? "button" : "submit"}
       onClick={onClick}
       disabled={loading}
-      className={`w-full ${color} text-white font-black text-xs uppercase tracking-[0.15em] py-4 rounded-2xl shadow-lg hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-40 mt-4`}
+      className={`w-full ${color} text-white font-black text-xs uppercase tracking-widest py-4 rounded-2xl shadow-lg hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-40 mt-4`}
     >
       {loading ? <Loader2 className="animate-spin" size={18} /> : <Link2 size={18} />}
       {label}

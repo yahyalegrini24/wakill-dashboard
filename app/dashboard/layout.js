@@ -10,16 +10,28 @@ export default function DashboardLayout({ children }) {
   useEffect(() => {
     const token = Cookies.get("token");
     if (!token) {
-      router.push("/Login");
+      // تأكد من تطابق مسار صفحة الدخول (Login أو login)
+      router.push("/login");
     }
-  }, []);
+  }, [router]);
 
   return (
-    <div className="min-h-screen flex bg-[#F8FAFC]">
+    <div 
+      dir="rtl" 
+      className="min-h-screen flex flex-row bg-slate-50 font-sans"
+    >
+      {/* 1. SIDEBAR (سيظهر في اليمين بسبب dir="rtl") */}
       <Sidebar />
-      <div className="flex-1 p-8 overflow-auto">
-        {children}
-      </div>
+
+      {/* 2. MAIN CONTENT AREA */}
+      <main className="flex-1 h-screen overflow-y-auto overflow-x-hidden p-4 md:p-8 lg:p-10">
+        <div className="max-w-7xl mx-auto">
+          {children}
+        </div>
+      </main>
+      
+      {/* لمسة جمالية: ظل خفيف يفصل المحتوى عن السايدبار عند التمرير */}
+      <div className="fixed top-0 right-72 bottom-0 w-px bg-slate-200/50 hidden lg:block" />
     </div>
   );
 }

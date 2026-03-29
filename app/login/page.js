@@ -4,6 +4,8 @@ import api from "../../lib/api";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
+import { Eye, EyeOff, Loader2, CheckCircle2, Lock } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,28 +17,28 @@ export default function LoginPage() {
 
   const slides = [
     {
-      image: "/test1.png",
-      title: "Manage all your messages",
-      subtitle: "WhatsApp, Facebook and Instagram in one place"
+      title: "أتمتة المحادثات بالذكاء الاصطناعي",
+      subtitle: "دع نظامنا الذكي يتولى الرد على عملائك وإغلاق المبيعات بدلاً منك على مدار الساعة.",
+      tag: "الذكاء الاصطناعي"
     },
     {
-      image: "/test2.png",
-      title: "AI responds in Darija",
-      subtitle: "Your smart agent works 24/7 automatically"
+      title: "منصة واحدة لكل قنواتك",
+      subtitle: "إدارة رسائل واتساب، فيسبوك وإنستغرام في لوحة تحكم واحدة موحدة واحترافية.",
+      tag: "إدارة شاملة"
     },
     {
-      image: "/test1.png",
-      title: "Track all your orders",
-      subtitle: "Every order saved and managed from your dashboard"
+      title: "تحليلات دقيقة لنمو تجارتك",
+      subtitle: "تتبع أداء الطلبيات، تفاعل العملاء، ونمو المبيعات بضغطة زر واحدة.",
+      tag: "تقارير ذكية"
     }
   ];
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentSlide(prev => (prev + 1) % slides.length);
-    }, 4000);
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [slides.length]);
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -47,91 +49,74 @@ export default function LoginPage() {
       Cookies.set("token", res.data.token, { expires: 7 });
       router.push("/dashboard");
     } catch (err) {
-      setError(err.response?.data?.message || "Login failed");
+      setError(err.response?.data?.message || "البريد الإلكتروني أو كلمة المرور غير صحيحة");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div dir="rtl" className="min-h-screen flex bg-white font-sans">
+      
+      {/* LEFT SIDE: LOGIN FORM */}
+      <div className="w-full lg:w-[45%] flex flex-col p-8 md:p-12 lg:p-16 justify-between">
+        
+        {/* Logo */}
+        <div className="mb-12">
+          <Link href="/">
+            <Image src="/logo.png" alt="Wakill.ai" width={160} height={50} className="object-contain" priority />
+          </Link>
+        </div>
 
-      {/* LEFT SIDE */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-between p-10 bg-white">
-
-        {/* Logo only */}
-       <div>
-       <Image src="/logo.png" alt="Wakil.ai" width={100} height={50} className="object-contain" />
-       </div>
-
-        {/* Form */}
-        <div className="max-w-sm w-full mx-auto">
-
-          <h1 className="text-4xl font-bold text-[#1E293B] mb-2">Login</h1>
-          <p className="text-[#64748B] text-sm mb-8">
-            Manage your store and AI assistant
-          </p>
+        {/* Content */}
+        <div className="max-w-md w-full mx-auto">
+          <div className="mb-10 text-right">
+            <h1 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">تسجيل الدخول</h1>
+            <p className="text-slate-500 font-medium">مرحباً بعودتك! قم بإدارة متجرك ومساعدك الذكي الآن.</p>
+          </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-100 text-red-500 px-4 py-3 rounded-2xl mb-5 text-sm">
-              ⚠️ {error}
+            <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-2xl mb-6 text-sm font-bold flex items-center gap-2">
+              <span className="text-lg">⚠️</span> {error}
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-5">
-
+          <form onSubmit={handleLogin} className="space-y-6 text-right">
             <div>
-              <label className="block text-sm font-semibold text-[#1E293B] mb-2">
-                Email
-              </label>
+              <label className="block text-sm font-bold text-slate-700 mb-2 mr-1">البريد الإلكتروني</label>
               <input
                 type="email"
                 required
                 autoFocus
                 value={form.email}
-                onChange={e => setForm({ ...form, email: e.target.value })}
-                className="w-full border border-[#E2E8F0] rounded-2xl px-4 py-3.5 text-[#1E293B] placeholder-[#CBD5E1] focus:outline-none transition text-sm"
-                onFocus={e => e.target.style.borderColor = "#1c98ed"}
-                onBlur={e => e.target.style.borderColor = "#E2E8F0"}
-                placeholder="your@email.com"
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                className="w-full border border-slate-200 rounded-2xl px-5 py-4 text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-[#25D366]/20 focus:border-[#25D366] transition-all"
+                placeholder="name@company.com"
               />
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-semibold text-[#1E293B]">
-                  Password
-                </label>
-                <a href="#" style={{color: "#1c98ed"}} className="text-sm font-medium hover:underline">
-                  Forgot password?
-                </a>
+            <div className="relative">
+              <div className="flex justify-between items-center mb-2 mr-1">
+                <label className="block text-sm font-bold text-slate-700">كلمة المرور</label>
+                <Link href="/forgot-password" size="sm" className="text-xs font-bold text-[#25D366] hover:underline underline-offset-4">
+                  نسيت كلمة المرور؟
+                </Link>
               </div>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   required
                   value={form.password}
-                  onChange={e => setForm({ ...form, password: e.target.value })}
-                  className="w-full border border-[#E2E8F0] rounded-2xl px-4 py-3.5 text-[#1E293B] placeholder-[#CBD5E1] focus:outline-none transition text-sm pr-12"
-                  onFocus={e => e.target.style.borderColor = "#1c98ed"}
-                  onBlur={e => e.target.style.borderColor = "#E2E8F0"}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  className="w-full border border-slate-200 rounded-2xl px-5 py-4 text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-[#25D366]/20 focus:border-[#25D366] transition-all pl-12"
                   placeholder="••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#64748B]"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                 >
-                  {showPassword ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                    </svg>
-                  ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  )}
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
             </div>
@@ -139,76 +124,112 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              style={{backgroundColor: "#1c98ed"}}
-              className="w-full hover:opacity-90 active:scale-95 text-white py-3.5 rounded-2xl font-semibold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-lg hover:bg-black transition-all transform active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3 mt-4 shadow-xl shadow-slate-200"
             >
               {loading ? (
                 <>
-                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                  </svg>
-                  Logging in...
+                  <Loader2 className="animate-spin" size={20} />
+                  جاري التحقق...
                 </>
-              ) : "Login"}
+              ) : (
+                "دخول للمنصة"
+              )}
             </button>
-
           </form>
 
-          <p className="text-center text-sm text-[#64748B] mt-6">
-            Not registered yet?{" "}
-            <a href="/register" style={{color: "#1c98ed"}} className="font-semibold hover:underline">
-              Create an Account
-            </a>
+          <p className="text-center text-sm text-slate-500 mt-8 font-medium">
+            ليس لديك حساب بعد؟{" "}
+            <Link href="/register" className="text-[#25D366] font-black hover:underline underline-offset-4">
+              إنشاء حساب جديد
+            </Link>
           </p>
-
         </div>
 
         {/* Footer */}
-        <p className="text-xs text-[#94A3B8]">
-          © 2025 Wakil.ai — All rights reserved
-        </p>
-
+        <div className="mt-12 pt-8 border-t border-slate-50 flex justify-between items-center text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+           <span>© 2026 WAKILL.AI</span>
+           <div className="flex gap-4">
+              <Link href="#" className="hover:text-slate-900">الخصوصية</Link>
+              <Link href="#" className="hover:text-slate-900">الشروط</Link>
+           </div>
+        </div>
       </div>
 
-      {/* RIGHT SIDE */}
-      <div className="hidden lg:flex w-1/2 flex-col items-center justify-center relative overflow-hidden p-12" style={{backgroundColor: "#1c98ed"}}>
+      {/* RIGHT SIDE: MODERN SaaS VISUALS (Consistently Dark/Green Theme) */}
+      <div className="hidden lg:flex w-[55%] bg-slate-50 items-center justify-center p-12 relative overflow-hidden">
+        
+        {/* Background Decor */}
+        <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-[#25D366]/10 rounded-full blur-[100px]"></div>
+        <div className="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-blue-500/5 rounded-full blur-[100px]"></div>
 
-        {/* Slide image */}
-        <div className="relative w-full max-w-lg h-96 mb-10">
-          <Image
-            src={slides[currentSlide].image}
-            alt="slide"
-            fill
-            className="object-contain transition-all duration-700"
-          />
+        <div className="relative z-10 w-full max-w-2xl flex flex-col items-center">
+          
+          {/* Mockup Display */}
+          <div className="w-full bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 p-8 mb-16 transform rotate-2 hover:rotate-0 transition-transform duration-700">
+             <div className="flex justify-between items-center mb-6">
+                <div className="flex gap-2">
+                    <div className="w-3 h-3 rounded-full bg-slate-200"></div>
+                    <div className="w-3 h-3 rounded-full bg-slate-200"></div>
+                    <div className="w-3 h-3 rounded-full bg-slate-200"></div>
+                </div>
+                <div className="h-6 w-20 bg-green-50 rounded-md border border-[#25D366]/20 flex items-center justify-center">
+                    <span className="text-[8px] font-black text-[#25D366]">LIVE CHAT</span>
+                </div>
+             </div>
+             
+             {/* Abstract UI Elements */}
+             <div className="space-y-4 animate-in fade-in zoom-in-95 duration-1000">
+                <div className="flex gap-4">
+                    <div className="h-32 flex-1 bg-slate-900 rounded-2xl p-4 flex flex-col justify-between">
+                        <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center"><Lock size={16} className="text-[#25D366]" /></div>
+                        <div>
+                            <div className="h-2 w-16 bg-white/20 rounded-full mb-2"></div>
+                            <div className="h-4 w-24 bg-white rounded-full"></div>
+                        </div>
+                    </div>
+                    <div className="h-32 flex-1 bg-[#25D366] rounded-2xl p-4 flex flex-col justify-between shadow-lg shadow-green-200">
+                        <div className="w-8 h-8 rounded-lg bg-black/10 flex items-center justify-center"><CheckCircle2 size={16} className="text-white" /></div>
+                        <div>
+                            <div className="h-2 w-16 bg-white/40 rounded-full mb-2"></div>
+                            <div className="h-4 w-24 bg-white rounded-full"></div>
+                        </div>
+                    </div>
+                </div>
+                <div className="h-40 w-full bg-slate-50 rounded-2xl border border-dashed border-slate-200 flex items-center justify-center">
+                    <div className="text-center space-y-2">
+                        <div className="h-2 w-32 bg-slate-200 rounded-full mx-auto"></div>
+                        <div className="h-2 w-24 bg-slate-100 rounded-full mx-auto"></div>
+                    </div>
+                </div>
+             </div>
+          </div>
+
+          {/* Slide Text */}
+          <div className="text-center space-y-4 px-10">
+            <span className="inline-block px-4 py-1.5 bg-[#25D366] text-white text-[10px] font-black uppercase tracking-wider rounded-full mb-2">
+              {slides[currentSlide].tag}
+            </span>
+            <h2 className="text-4xl font-black text-slate-900 leading-tight">
+              {slides[currentSlide].title}
+            </h2>
+            <p className="text-slate-500 text-lg font-medium leading-relaxed max-w-md mx-auto">
+              {slides[currentSlide].subtitle}
+            </p>
+          </div>
+
+          {/* Indicators */}
+          <div className="flex gap-3 mt-10">
+            {slides.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentSlide(i)}
+                className={`h-2 rounded-full transition-all duration-500 ${
+                  i === currentSlide ? "w-10 bg-[#25D366]" : "w-2 bg-slate-300 hover:bg-slate-400"
+                }`}
+              />
+            ))}
+          </div>
         </div>
-
-        {/* Slide text */}
-        <div className="text-center mb-8 px-4">
-          <h2 className="text-white text-2xl font-bold mb-2">
-            {slides[currentSlide].title}
-          </h2>
-          <p className="text-white/70 text-sm">
-            {slides[currentSlide].subtitle}
-          </p>
-        </div>
-
-        {/* Slide indicators */}
-        <div className="flex items-center gap-2">
-          {slides.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrentSlide(i)}
-              className={`transition-all duration-300 rounded-full ${
-                i === currentSlide
-                  ? "w-8 h-2.5 bg-white"
-                  : "w-2.5 h-2.5 bg-white/30 hover:bg-white/50"
-              }`}
-            />
-          ))}
-        </div>
-
       </div>
 
     </div>
