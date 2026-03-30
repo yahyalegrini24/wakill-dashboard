@@ -12,33 +12,47 @@ import {
   AlertTriangle,
   ChevronDown,
   Info,
-  ShieldCheck
+  ShieldCheck,
+  PlusCircle
 } from "lucide-react";
 
 export default function SettingsPage() {
-  // --- KEEPING ORIGINAL STATES ---
+  // --- UPDATED STATES ---
   const [form, setForm] = useState({
     name: "",
-    wilaya: { number: "", name: "" },
-    paymentMethod: "cash_on_delivery"
+    wilaya: { number: "16", name: "Alger" },
+    paymentMethod: "cash_on_delivery",
+    deliveryCompanies: [] // Added to match backend expectation for Create
   });
+  
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
+  const [isNewStore, setIsNewStore] = useState(false); // Flag for Create vs Update
 
-  // --- KEEPING ORIGINAL LOGIC ---
+  // --- IMPROVED LOGIC: CHECK IF STORE EXISTS ---
   const fetchStore = useCallback(async () => {
     try {
+      setLoading(true);
       const res = await api.get("/store/my");
+      
+      // If successful, store exists -> Map data to form
       setForm({
         name: res.data.name || "",
         wilaya: res.data.wilaya || { number: "16", name: "Alger" },
-        paymentMethod: res.data.paymentMethod || "cash_on_delivery"
+        paymentMethod: res.data.paymentMethod || "cash_on_delivery",
+        deliveryCompanies: res.data.deliveryCompanies || []
       });
+      setIsNewStore(false);
     } catch (err) {
-      console.error("Fetch error:", err);
-      setError("Failed to load store settings.");
+      // If 404, the user has no store yet -> Switch to Create Mode
+      if (err.response?.status === 404) {
+        setIsNewStore(true);
+        console.log("No store found. Switching to Creation mode.");
+      } else {
+        setError("تعذر تحميل إعدادات المتجر.");
+      }
     } finally {
       setLoading(false);
     }
@@ -48,17 +62,28 @@ export default function SettingsPage() {
     fetchStore();
   }, [fetchStore]);
 
+  // --- UPSERT LOGIC: POST IF NEW, PUT IF EXISTING ---
   async function handleUpdate(e) {
     e.preventDefault();
     setIsSaving(true);
     setSuccess("");
     setError("");
+
     try {
-      await api.put("/store/update", form);
-      setSuccess("تم تحديث الإعدادات بنجاح!");
+      if (isNewStore) {
+        // Step 1: Create the store
+        await api.post("/store/create", form);
+        setSuccess("تم إنشاء متجرك الجديد بنجاح!");
+        setIsNewStore(false); // Switch to update mode for next save
+      } else {
+        // Step 2: Update existing store
+        await api.put("/store/update", form);
+        setSuccess("تم تحديث الإعدادات بنجاح!");
+      }
+      
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
-      setError(err.response?.data?.message || "Update failed");
+      setError(err.response?.data?.message || "فشلت العملية، يرجى المحاولة لاحقاً");
     } finally {
       setIsSaving(false);
     }
@@ -100,10 +125,10 @@ export default function SettingsPage() {
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-900 text-white rounded-full text-[10px] font-black uppercase tracking-[0.1em]">
-            <ShieldCheck size={12} /> الملف التعريفي للمتجر
+            <ShieldCheck size={12} /> {isNewStore ? "إعداد متجر جديد" : "الملف التعريفي للمتجر"}
           </div>
           <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-             إعدادات الهوية
+              {isNewStore ? "إنشاء الهوية" : "إعدادات الهوية"}
           </h1>
           <p className="text-slate-500 font-medium">تحكم في اسم متجرك، موقعه، وطرق الدفع المفضلة.</p>
         </div>
@@ -129,14 +154,16 @@ export default function SettingsPage() {
                 <div className="bg-white/5 p-3 rounded-2xl text-[10px] font-black tracking-widest border border-white/5">DZ</div>
               </div>
             </div>
-            {/* Background Decoration */}
             <Store size={150} className="absolute -bottom-10 -left-10 text-white/[0.03] -rotate-12" />
           </div>
 
           <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex items-start gap-4">
             <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><Info size={20} /></div>
             <p className="text-xs text-slate-500 font-medium leading-relaxed">
-              هذه المعلومات ستظهر لزبائنك أثناء عملية الطلب الآلية عبر مسنجر وواتساب. تأكد من دقة اسم المتجر.
+              {isNewStore 
+                ? "ابدأ بإدخال اسم متجرك واختيار الولاية لتفعيل نظام الطلبات الآلي."
+                : "هذه المعلومات ستظهر لزبائنك أثناء عملية الطلب الآلية عبر مسنجر وواتساب."
+              }
             </p>
           </div>
         </div>
@@ -226,8 +253,8 @@ export default function SettingsPage() {
                 disabled={isSaving}
                 className="w-full bg-slate-900 text-white py-5 rounded-[1.5rem] font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-black transition-all disabled:opacity-50 flex items-center justify-center gap-3 mt-4"
               >
-                {isSaving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
-                {isSaving ? "جاري الحفظ..." : "تطبيق الإعدادات"}
+                {isSaving ? <Loader2 className="animate-spin" size={18} /> : (isNewStore ? <PlusCircle size={18} /> : <Save size={18} />)}
+                {isSaving ? "جاري الحفظ..." : (isNewStore ? "إنشاء المتجر الآن" : "تطبيق الإعدادات")}
               </motion.button>
             </form>
           </motion.div>
@@ -236,8 +263,6 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-// --- SUB-COMPONENTS (FRONT-END ENHANCEMENTS ONLY) ---
 
 function FormInput({ label, icon, placeholder, value, onChange }) {
   return (
